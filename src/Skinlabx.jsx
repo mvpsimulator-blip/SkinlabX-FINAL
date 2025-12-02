@@ -127,7 +127,7 @@ const CommunityChat = ({ user, isAdmin }) => {
         <div className="p-4 bg-slate-800 border-b border-slate-700"><h2 className="text-white font-bold">Chat Global</h2></div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map(m => (
-                <div key={m.id} className={flex gap-3 ${m.role === 'admin' ? 'flex-row-reverse' : ''}}>
+               <div key={m.id} className={`flex gap-3 ${m.role === 'admin' ? 'flex-row-reverse' : ''}`}>
                     <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-white text-xs">{m.user[0]}</div>
                     <div className="bg-slate-800 p-2 rounded text-sm text-slate-200">
                         <span className="text-xs text-slate-400 block mb-1">{m.user}</span>
@@ -285,3 +285,4 @@ export default function App() {
                         {s.premium && <div className="absolute top-0 left-0 bg-yellow-500 text-black text-[10px] px-2 font-bold">VIP</div>}
                         <p className="p-2 text-xs font-bold text-white">{s.title}</p>
                         {isAdmin && <button onClick={(e)=>{e.stopPropagation(); if(window.con
+
