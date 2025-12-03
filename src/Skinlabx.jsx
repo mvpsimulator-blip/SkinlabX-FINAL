@@ -51,15 +51,12 @@ const SkinEditor = ({ skin, onClose, isPremium }) => {
     img.crossOrigin = "Anonymous";
     img.src = skin.textureUrl || skin.previewUrl || ''; 
     img.onload = () => {
-      // set canvas pixel size to image size
       canvas.width = img.width;
       canvas.height = img.height;
-      // fit displayed size (css) handled by container
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
     };
     img.onerror = () => {
-      // en caso de fallo, limpiar canvas
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
@@ -130,7 +127,7 @@ const CommunityChat = ({ user, isAdmin }) => {
         <div className="p-4 bg-slate-800 border-b border-slate-700"><h2 className="text-white font-bold">Chat</h2></div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map(m => (
-                <div key={m.id} className={`flex gap-2 ${m.role === 'admin' ? 'flex-row-reverse' : ''}`}>
+                <div key={m.id} className={flex gap-2 ${m.role === 'admin' ? 'flex-row-reverse' : ''}}>
                     <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-white text-xs">{(m.user && m.user[0]) || '?'}</div>
                     <div className="bg-slate-800 p-2 rounded text-sm text-slate-200">
                         <span className="text-[10px] text-slate-400 block">{m.user}</span>
@@ -165,7 +162,7 @@ export default function App() {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [adminTab, setAdminTab] = useState('skin'); // skin, model, game
+  const [adminTab, setAdminTab] = useState('skin'); 
   const [adminPassInput, setAdminPassInput] = useState("");
 
   // ADMIN STATE
@@ -187,9 +184,14 @@ export default function App() {
   const [userSkinTitle, setUserSkinTitle] = useState("");
   const [userSkinGame, setUserSkinGame] = useState("");
   const [userSkinModel, setUserSkinModel] = useState("");
-  const [userSkinPreview, setUserSkinPreview] = useState("");
-  const [userSkinTexture, setUserSkinTexture] = useState("");
+  const [userSkinPreview, setUserSkinPreview] = useState(""); 
+  const [userSkinTexture, setUserSkinTexture] = useState(""); 
   const [isAuthor, setIsAuthor] = useState(false);
+
+  // --- NUEVOS ESTADOS PARA CARGA DE ARCHIVOS ---
+  const [selectedPreviewFile, setSelectedPreviewFile] = useState(null);
+  const [selectedTextureFile, setSelectedTextureFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState({ preview: false, texture: false, loading: false });
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -208,9 +210,7 @@ export default function App() {
   // ACTIONS
   const handleAdminLogin = () => { if(adminPassInput === ADMIN_PASS) { setIsAdmin(true); navigateTo('upload'); } else alert("Contraseña incorrecta"); };
 
-  // Simple mock Google login to avoid undefined handle
   const handleLogin = () => {
-    // Simula login (reemplaza con tu OAuth si lo deseas)
     const mockUser = { displayName: 'Usuario' };
     setUser(mockUser);
     navigateTo('home');
@@ -231,11 +231,64 @@ export default function App() {
       setModels(prev => [...prev, { id, name: newModelName, gameId: String(newModelGameId), type: newModelType, image: newModelImg }]);
       alert("Modelo Agregado");
   };
+
+  // --- FUNCIÓN DE SUBIDA (SIMULADA) ---
+  const uploadToImgurSimulation = async (file, type) => {
+    if (!file) return null;
+    
+    setUploadStatus(prev => ({ ...prev, loading: true }));
+    
+    // Simula retraso
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    setUploadStatus(prev => ({ ...prev, loading: false }));
+
+    // Simula la URL
+    const mockUrl = https://i.imgur.com/upload-${type}-${Date.now()}.png;
+    
+    if (type === 'preview') {
+        setUserSkinPreview(mockUrl);
+        setUploadStatus(prev => ({ ...prev, preview: true }));
+    } else if (type === 'texture') {
+        setUserSkinTexture(mockUrl);
+        setUploadStatus(prev => ({ ...prev, texture: true }));
+    }
+    return mockUrl;
+  };
   
+  // --- SUBIDA DE USUARIO MODIFICADA ---
   const userUpload = () => {
       if(!isAuthor) { alert("Marca que eres autor para subir."); return; }
+      
+      if (!userSkinPreview || !userSkinTexture) { 
+          alert("Debes subir la foto de previsualización y la textura."); 
+          return; 
+      }
+      
       const id = String(Date.now());
-      setSkins(prev => [...prev, { id, title: userSkinTitle, modelId: String(userSkinModel), previewUrl: userSkinPreview, textureUrl: userSkinTexture, premium: false, source: 'community', author: user?.displayName || 'Invitado', allowEdit: true }]);
+      setSkins(prev => [...prev, { 
+          id, 
+          title: userSkinTitle, 
+          modelId: String(userSkinModel), 
+          previewUrl: userSkinPreview, 
+          textureUrl: userSkinTexture, 
+          premium: false, 
+          source: 'community', 
+          author: user?.displayName || 'Invitado', 
+          allowEdit: true 
+      }]);
+      
+      // Limpiar
+      setUserSkinTitle("");
+      setUserSkinGame("");
+      setUserSkinModel("");
+      setUserSkinPreview("");
+      setUserSkinTexture("");
+      setSelectedPreviewFile(null);
+      setSelectedTextureFile(null);
+      setUploadStatus({ preview: false, texture: false, loading: false });
+      setIsAuthor(false);
+
       alert("Subido a la comunidad"); navigateTo('community-hub');
   };
 
@@ -263,7 +316,7 @@ export default function App() {
             </div>
             <div>
                 <h3 className="text-xs text-slate-500 font-bold mb-2">REDES</h3>
-                <div className="flex gap-2 flex-wrap">{SOCIALS.map(s=><button key={s.name} onClick={()=>window.open(s.url, '_blank')} className={`${s.color} p-2 rounded text-white`}>{s.icon}</button>)}</div>
+                <div className="flex gap-2 flex-wrap">{SOCIALS.map(s=><button key={s.name} onClick={()=>window.open(s.url, '_blank')} className={${s.color} p-2 rounded text-white}>{s.icon}</button>)}</div>
             </div>
             <div>
                 {isAdmin ? <button onClick={()=>{navigateTo('upload'); setIsMenuOpen(false);}} className="text-red-400 font-bold w-full text-left">Panel Admin</button> : <button onClick={()=>{navigateTo('admin-login'); setIsMenuOpen(false);}} className="text-slate-500 text-xs w-full text-left">Admin Login</button>}
@@ -311,9 +364,9 @@ export default function App() {
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2"><ShieldCheck className="text-red-500"/> Admin Zone</h2>
         
         <div className="flex gap-2 mb-4 overflow-x-auto">
-            <button onClick={()=>setAdminTab('skin')} className={`px-4 py-2 rounded font-bold text-xs ${adminTab==='skin'?'bg-red-600 text-white':'bg-slate-800 text-slate-400'}`}>Skin</button>
-            <button onClick={()=>setAdminTab('model')} className={`px-4 py-2 rounded font-bold text-xs ${adminTab==='model'?'bg-red-600 text-white':'bg-slate-800 text-slate-400'}`}>Modelo</button>
-            <button onClick={()=>setAdminTab('game')} className={`px-4 py-2 rounded font-bold text-xs ${adminTab==='game'?'bg-red-600 text-white':'bg-slate-800 text-slate-400'}`}>Juego</button>
+            <button onClick={()=>setAdminTab('skin')} className={px-4 py-2 rounded font-bold text-xs ${adminTab==='skin'?'bg-red-600 text-white':'bg-slate-800 text-slate-400'}}>Skin</button>
+            <button onClick={()=>setAdminTab('model')} className={px-4 py-2 rounded font-bold text-xs ${adminTab==='model'?'bg-red-600 text-white':'bg-slate-800 text-slate-400'}}>Modelo</button>
+            <button onClick={()=>setAdminTab('game')} className={px-4 py-2 rounded font-bold text-xs ${adminTab==='game'?'bg-red-600 text-white':'bg-slate-800 text-slate-400'}}>Juego</button>
         </div>
 
         {adminTab === 'skin' && (
@@ -393,7 +446,87 @@ export default function App() {
       )}
 
       {view === 'user-upload' && (
-        <div className="p-6 pb-24"><h2 className="text-white font-bold mb-4">Subir Aporte</h2><input className="w-full bg-slate-800 p-3 rounded mb-2 text-white" placeholder="Título" value={userSkinTitle} onChange={e=>setUserSkinTitle(e.target.value)}/><select className="w-full bg-slate-800 p-3 rounded mb-2 text-white" onChange={e=>{setUserSkinGame(e.target.value); setUserSkinModel("");}} value={userSkinGame}><option value="">Juego...</option>{games.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select><select className="w-full bg-slate-800 p-3 rounded mb-2 text-white" onChange={e=>setUserSkinModel(e.target.value)} value={userSkinModel}><option value="">Modelo...</option>{models.filter(m=>String(m.gameId)===String(userSkinGame)).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select><input className="w-full bg-slate-800 p-3 rounded mb-2 text-white" placeholder="URL Foto" value={userSkinPreview} onChange={e=>setUserSkinPreview(e.target.value)}/><input className="w-full bg-slate-800 p-3 rounded mb-2 text-white" placeholder="URL Textura" value={userSkinTexture} onChange={e=>setUserSkinTexture(e.target.value)}/><label className="flex gap-2 text-white mb-4 text-xs"><input type="checkbox" checked={isAuthor} onChange={e=>setIsAuthor(e.target.checked)}/> Soy el autor.</label><button disabled={!isAuthor} onClick={userUpload} className="w-full bg-green-600 disabled:bg-slate-600 text-white py-3 rounded font-bold">Enviar</button></div>
+        <div className="p-6 pb-24">
+          <h2 className="text-white font-bold mb-4">Subir Aporte</h2>
+          
+          <p className="text-slate-400 text-sm mb-2">Metadatos</p>
+          <input className="w-full bg-slate-800 p-3 rounded mb-2 text-white" placeholder="Título" value={userSkinTitle} onChange={e=>setUserSkinTitle(e.target.value)}/>
+          <select className="w-full bg-slate-800 p-3 rounded mb-2 text-white" onChange={e=>{setUserSkinGame(e.target.value); setUserSkinModel("");}} value={userSkinGame}>
+            <option value="">Juego...</option>
+            {games.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+          <select className="w-full bg-slate-800 p-3 rounded mb-2 text-white" onChange={e=>setUserSkinModel(e.target.value)} value={userSkinModel}>
+            <option value="">Modelo...</option>
+            {models.filter(m=>String(m.gameId)===String(userSkinGame)).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+          
+          <p className="text-slate-400 text-sm mt-4 mb-2">Paso 1: Cargar Archivos (a Imgur)</p>
+          
+          {/* Carga de Imagen de Previsualización */}
+          <div className="bg-slate-800 p-3 rounded mb-3 flex items-center justify-between">
+              <label className="flex-1 text-white flex items-center gap-2 overflow-hidden cursor-pointer">
+                  <ImageIcon size={20} className="text-pink-400"/>
+                  <span className="truncate">{selectedPreviewFile ? selectedPreviewFile.name : "Seleccionar Foto de Previsualización"}</span>
+                  <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={e => setSelectedPreviewFile(e.target.files[0])}
+                  />
+              </label>
+              {userSkinPreview ? <CheckCircle size={20} className="text-green-500"/> : (
+                  <button 
+                      disabled={!selectedPreviewFile || uploadStatus.loading || userSkinPreview}
+                      onClick={() => uploadToImgurSimulation(selectedPreviewFile, 'preview')} 
+                      className="bg-pink-600 text-white px-3 py-1 rounded text-xs font-bold disabled:bg-slate-600 flex items-center gap-1"
+                  >
+                      {uploadStatus.loading && selectedPreviewFile && !userSkinPreview ? 'Cargando...' : 'Subir'}
+                      {!userSkinPreview && <Upload size={14}/>}
+                  </button>
+              )}
+          </div>
+
+          {/* Carga de Imagen de Textura */}
+          <div className="bg-slate-800 p-3 rounded mb-3 flex items-center justify-between">
+              <label className="flex-1 text-white flex items-center gap-2 overflow-hidden cursor-pointer">
+                  <Layers size={20} className="text-purple-400"/>
+                  <span className="truncate">{selectedTextureFile ? selectedTextureFile.name : "Seleccionar Textura (Skin)"}</span>
+                  <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={e => setSelectedTextureFile(e.target.files[0])}
+                  />
+              </label>
+              {userSkinTexture ? <CheckCircle size={20} className="text-green-500"/> : (
+                  <button 
+                      disabled={!selectedTextureFile || uploadStatus.loading || userSkinTexture}
+                      onClick={() => uploadToImgurSimulation(selectedTextureFile, 'texture')} 
+                      className="bg-purple-600 text-white px-3 py-1 rounded text-xs font-bold disabled:bg-slate-600 flex items-center gap-1"
+                  >
+                      {uploadStatus.loading && selectedTextureFile && !userSkinTexture ? 'Cargando...' : 'Subir'}
+                      {!userSkinTexture && <Upload size={14}/>}
+                  </button>
+              )}
+          </div>
+          
+          {uploadStatus.loading && <p className="text-center text-yellow-500 text-sm mb-4">Procesando carga a Imgur...</p>}
+
+          <p className="text-slate-400 text-sm mt-4 mb-2">Paso 2: Publicar Aporte</p>
+          
+          <label className="flex gap-2 text-white mb-4 text-xs">
+              <input type="checkbox" checked={isAuthor} onChange={e=>setIsAuthor(e.target.checked)}/> 
+              Soy el autor y acepto los términos.
+          </label>
+          
+          <button 
+              disabled={!isAuthor || !userSkinPreview || !userSkinTexture || uploadStatus.loading} 
+              onClick={userUpload} 
+              className="w-full bg-green-600 disabled:bg-slate-600 text-white py-3 rounded font-bold"
+          >
+              Enviar Aporte a la Comunidad
+          </button>
+        </div>
       )}
 
       {view === 'skin-detail' && (
@@ -422,8 +555,8 @@ export default function App() {
 
       {view !== 'skin-detail' && (
         <nav className="fixed bottom-0 w-full bg-slate-900 border-t border-slate-700 p-2 flex justify-around pb-safe-offset z-40">
-           <button onClick={()=>navigateTo('home')} className={`flex flex-col items-center ${view==='home'?'text-orange-500':'text-slate-400'}`}><Home size={22}/><span className="text-[10px]">Inicio</span></button>
-           <button onClick={()=>navigateTo('chat')} className={`flex flex-col items-center ${view==='chat'?'text-indigo-500':'text-slate-400'}`}><MessageSquare size={22}/><span className="text-[10px]">Chat</span></button>
+           <button onClick={()=>navigateTo('home')} className={flex flex-col items-center ${view==='home'?'text-orange-500':'text-slate-400'}}><Home size={22}/><span className="text-[10px]">Inicio</span></button>
+           <button onClick={()=>navigateTo('chat')} className={flex flex-col items-center ${view==='chat'?'text-indigo-500':'text-slate-400'}}><MessageSquare size={22}/><span className="text-[10px]">Chat</span></button>
            <button onClick={()=>navigateTo('premium')} className="bg-gradient-to-tr from-yellow-500 to-orange-500 text-white p-3 rounded-full -mt-8 border-4 border-slate-900 shadow-lg"><Crown size={24}/></button>
            <button onClick={()=>setIsMenuOpen(true)} className="text-slate-400 flex flex-col items-center"><Menu size={22}/><span className="text-[10px]">Menú</span></button>
         </nav>
